@@ -1,0 +1,15 @@
+dn: ou=local,dc=vds,dc=enterprise
+ou: local
+objectClass: organizationalUnit
+
+dn: uid=local_user,ou=local,dc=vds,dc=enterprise
+objectClass: inetOrgPerson
+objectClass: shadowAccount
+objectClass: posixAccount
+uid: local_user
+cn: local_user
+sn: local_user
+uidNumber: 1001
+gidNumber: 1020
+homeDirectory: /home/local_user
+loginShell: /bin/bash
