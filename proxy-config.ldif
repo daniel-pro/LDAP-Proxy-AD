@@ -1,0 +1,92 @@
+dn: cn=config
+objectClass: olcGlobal
+cn: config
+olcArgsFile: /var/lib/ldap/proxy/slapd.args
+olcPidFile: /var/lib/ldap/proxy/slapd.pid
+
+dn: cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: schema
+
+dn: cn=ADext,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: ADext
+olcAttributeTypes: {0}( 1.2.840.113556.1.4.221 NAME 'sAMAccountName' DESC 'MS User identifier' EQUALITY caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1
+466.115.121.1.15{256} )
+
+include: file:///etc/openldap/schema/core.ldif
+
+include: file:///etc/openldap/schema/cosine.ldif
+
+include: file:///etc/openldap/schema/inetorgperson.ldif
+
+include: file:///etc/openldap/schema/nis.ldif
+
+dn: olcDatabase=frontend,cn=config
+objectClass: olcDatabaseConfig
+olcDatabase: frontend
+
+dn: olcDatabase=config,cn=config
+objectClass: olcDatabaseConfig
+olcDatabase: config
+
+
+dn: olcDatabase=monitor,cn=config
+objectClass: olcDatabaseConfig
+olcDatabase: monitor
+
+dn: cn=module{0},cn=config
+objectClass: olcModuleList
+cn: module{0}
+olcModulepath: /usr/lib64/openldap
+olcModuleload: back_ldap.la
+olcModuleload: pcache.la
+olcModuleload: translucent.la
+
+dn: olcDatabase={2}hdb,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcHdbConfig
+olcDatabase: {2}hdb
+olcDbDirectory: /var/lib/ldap/proxy/data
+olcDbCacheSize: 20
+olcDbIndex: objectClass eq
+olcSuffix: dc=vds,dc=enterprise
+olcRootDN: cn=LDAPManager,dc=vds,dc=enterprise
+olcRootPW: secretpwd
+
+dn: olcOverlay={0}translucent,olcDatabase={2}hdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcTranslucentConfig
+olcOverlay: {0}translucent
+olcTranslucentLocal: uidNumber,gidNumber,loginShell,homeDirectory
+
+dn: olcDatabase={0}ldap,olcOverlay={0}translucent,olcDatabase={2}hdb,cn=config
+objectClass: olcLDAPConfig
+objectClass: olcTranslucentDatabase
+olcDatabase: {0}ldap
+olcDbRebindAsUser: TRUE
+olcDbURI: ldaps://vds.mydomain.tld:636
+olcDbACLBind: bindmethod=simple timeout=0 network-timeout=0 binddn="CN=mysvcaccount,OU=Service Accounts,OU=Users,ou=mydomain,dc=vds,dc=enterprise" credential
+s="svcaccountpwd" tls_reqcert=allow
+olcDbIDAssertBind: bindmethod=simple binddn="CN=mysvcaccount,OU=Service Accounts,OU=Users,ou=mydomain,dc=vds,dc=enterprise" credentials="svcaccountpwd" mode=n
+one tls_reqcert=allow
+olcDbIDAssertAuthzFrom: {0}dn.regex:.*
+
+dn: olcOverlay={1}pcache,olcDatabase={2}hdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcPcacheConfig
+olcOverlay: {1}pcache
+olcPcache: hdb 100000 1 1000 100
+olcPcacheAttrset: 0 *
+olcPcacheTemplate: "(cn=)" 0 300 0 0 0
+#olcPcachePosition: head
+
+dn: olcDatabase={0}hdb,olcOverlay={1}pcache,olcDatabase={2}hdb,cn=config
+objectClass: olcHdbConfig
+objectClass: olcPcacheDatabase
+olcDatabase: {0}hdb
+olcDbDirectory: /var/lib/ldap/proxy/cache
+olcDbCacheSize: 20
+olcDbIndex: objectClass eq
+olcDbIndex: cn,sn,uid,mail pres,eq,sub
+olcDbIndex: pcacheQueryID eq
