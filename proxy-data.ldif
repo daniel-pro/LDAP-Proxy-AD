@@ -1,0 +1,23 @@
+dn: dc=vds,dc=enterprise
+dc: vds
+o: vds
+objectclass: dcObject
+objectclass: organization
+
+dn: ou=mydomain,dc=vds,dc=enterprise
+ou: mydomain
+objectClass: organizationalUnit
+
+dn: OU=Users,ou=mydomain,dc=vds,dc=enterprise
+ou: Users
+objectClass: organizationalUnit
+
+dn: cn=Smith John,OU=Users,ou=mydomain,dc=vds,dc=enterprise
+objectClass: inetOrgPerson
+objectClass: posixAccount
+uid: jsmith
+cn: Smith John
+uidNumber: 1342046306
+gidNumber: 1339900490
+homeDirectory: /home/jsmith
+loginShell: /bin/bash
