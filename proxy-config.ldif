@@ -11,8 +11,7 @@ cn: schema
 dn: cn=ADext,cn=schema,cn=config
 objectClass: olcSchemaConfig
 cn: ADext
-olcAttributeTypes: {0}( 1.2.840.113556.1.4.221 NAME 'sAMAccountName' DESC 'MS User identifier' EQUALITY caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1
-466.115.121.1.15{256} )
+olcAttributeTypes: {0}( 1.2.840.113556.1.4.221 NAME 'sAMAccountName' DESC 'MS User identifier' EQUALITY caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{256} )
 
 include: file:///etc/openldap/schema/core.ldif
 
@@ -30,7 +29,6 @@ dn: olcDatabase=config,cn=config
 objectClass: olcDatabaseConfig
 olcDatabase: config
 
-
 dn: olcDatabase=monitor,cn=config
 objectClass: olcDatabaseConfig
 olcDatabase: monitor
@@ -42,7 +40,11 @@ olcModulepath: /usr/lib64/openldap
 olcModuleload: back_ldap.la
 olcModuleload: pcache.la
 olcModuleload: translucent.la
+olcModuleLoad: rwm.la
 
+#
+# DB where we store the attributes to append to AD records
+#
 dn: olcDatabase={2}hdb,cn=config
 objectClass: olcDatabaseConfig
 objectClass: olcHdbConfig
@@ -54,24 +56,54 @@ olcSuffix: dc=vds,dc=enterprise
 olcRootDN: cn=LDAPManager,dc=vds,dc=enterprise
 olcRootPW: secretpwd
 
+#
+# DB where we store our local full records
+#
+dn: olcDatabase={1}bdb,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcBdbConfig
+olcDatabase: {1}bdb
+olcDbDirectory: /var/lib/ldap/proxy/local_data
+olcSubordinate: TRUE
+olcSuffix: ou=local,dc=vds,dc=enterprise
+olcRootDN: cn=LDAPManager,ou=local,dc=vds,dc=enterprise
+olcRootPW: secretpwd
+
+#
+# Translucent config to append local attributes to AD records
+#
 dn: olcOverlay={0}translucent,olcDatabase={2}hdb,cn=config
 objectClass: olcOverlayConfig
 objectClass: olcTranslucentConfig
 olcOverlay: {0}translucent
 olcTranslucentLocal: uidNumber,gidNumber,loginShell,homeDirectory
 
+#
+# LDAP binding to AD
+#
 dn: olcDatabase={0}ldap,olcOverlay={0}translucent,olcDatabase={2}hdb,cn=config
 objectClass: olcLDAPConfig
 objectClass: olcTranslucentDatabase
 olcDatabase: {0}ldap
 olcDbRebindAsUser: TRUE
-olcDbURI: ldaps://vds.mydomain.tld:636
-olcDbACLBind: bindmethod=simple timeout=0 network-timeout=0 binddn="CN=mysvcaccount,OU=Service Accounts,OU=Users,ou=mydomain,dc=vds,dc=enterprise" credential
-s="svcaccountpwd" tls_reqcert=allow
-olcDbIDAssertBind: bindmethod=simple binddn="CN=mysvcaccount,OU=Service Accounts,OU=Users,ou=mydomain,dc=vds,dc=enterprise" credentials="svcaccountpwd" mode=n
-one tls_reqcert=allow
+olcDbURI: ldaps://vds.mydomain.com:636
+olcDbACLBind: bindmethod=simple timeout=0 network-timeout=0 binddn="CN=svcaccount,OU=Service Accounts,OU=Accounts,OU=Users,ou=mydomain,dc=vds,dc=enterprise" credentials="svcpwd" tls_reqcert=allow
+olcDbIDAssertBind: bindmethod=simple binddn="CN=svcaccount,OU=Service Accounts,OU=Accounts,OU=Users,ou=mydomain,dc=vds,dc=enterprise" credentials="svcpwd" mode=none tls_reqcert=allow
 olcDbIDAssertAuthzFrom: {0}dn.regex:.*
 
+#
+# Rewrite the local uid attributes from the local database as sAMAccountName
+#
+dn: olcOverlay=rwm,olcDatabase={1}bdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcRwmConfig
+olcOverlay: rwm
+olcRwmMap: {0}objectclass account user
+olcRwmMap: {1}attribute sAMAccountname uid
+
+#
+# Cache database configurations
+#
 dn: olcOverlay={1}pcache,olcDatabase={2}hdb,cn=config
 objectClass: olcOverlayConfig
 objectClass: olcPcacheConfig
