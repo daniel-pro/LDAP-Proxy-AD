@@ -1,5 +1,7 @@
 # LDAP-Proxy-AD
 OpenLDAP proxy configuration for AD.
+I struggled a while to have this config fully working, I collected a lot pieces of information from github, forums and OpenLDAP documentation.
+So I hope it could save some time to someone.
 
 The files included in this repo can be used to configure an OpenLDAP as proxy (with Translucent Proxy) for AD.
 
